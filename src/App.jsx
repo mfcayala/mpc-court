@@ -5,8 +5,8 @@ import { app, appId, auth, db, initialAuthToken } from './firebase/config';
 
 // The number of courts available per time slot
 const COURT_COUNT = 2;
-// Use the correct uploaded file path
-const LOGO_URL = "/mpc_logo.png";
+// Use BASE_URL for GitHub Pages compatibility - automatically adjusts for base path
+const LOGO_URL = `${import.meta.env.BASE_URL}mpc_logo.png`;
 
 // --- Special Slot Configuration ---
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -359,6 +359,12 @@ const App = () => {
     const handleFinalBooking = async () => {
         if (!confirmationData || !privacyAgreed || !db || selectedSlots.length === 0) return;
 
+        // Store data needed for success message before closing modal
+        const timeRange = confirmationData.timeRange;
+        
+        // Close modal immediately when confirm is clicked
+        setConfirmationData(null);
+
         // --- COST CALCULATION ---
         const calculatedCourtFee = selectedSlots.length * COURT_FEE_PER_SLOT;
         const calculatedGuestFee = guestCount * GUEST_FEE_PER_PERSON;
@@ -393,7 +399,6 @@ const App = () => {
 
         if (!courtToReserve) {
             setMessage('A court became fully booked during your selection. Please re-select your desired time block.');
-            setConfirmationData(null); 
             setSelectedSlots([]);
             return;
         }
@@ -422,13 +427,11 @@ const App = () => {
 
         try {
             await Promise.all(bookingPromises);
-            setMessage(`Successfully reserved ${confirmationData.timeRange} on ${courtToReserve}! Total estimated cost: PHP ${estimatedCost.toFixed(2)}.`);
-            setConfirmationData(null); // Close modal
+            setMessage(`Successfully reserved ${timeRange} on ${courtToReserve}! Total estimated cost: PHP ${estimatedCost.toFixed(2)}.`);
             setSelectedSlots([]); // Clear selection
         } catch (error) {
             console.error("Error reserving slot block:", error);
             setMessage("Failed to make reservation. Check console for details.");
-            setConfirmationData(null);
         }
     };
 
